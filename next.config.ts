@@ -9,10 +9,6 @@ const nextConfig: NextConfig = {
 
   serverExternalPackages: ["@prisma/client", "bcryptjs", "twilio"],
 
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
-
   // Add this block to ignore TypeScript errors on production build
   typescript: {
     ignoreBuildErrors: true,
