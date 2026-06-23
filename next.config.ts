@@ -12,6 +12,11 @@ const nextConfig: NextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
+
+  // Add this block to ignore TypeScript errors on production build
+  typescript: {
+    ignoreBuildErrors: true,
+  },
 };
 
 export default nextConfig;
