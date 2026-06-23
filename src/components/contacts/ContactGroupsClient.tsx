@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { Plus, Users, Trash2, ChevronDown, ChevronRight } from "lucide-react";
-import ContactImporter from './Contactimporter'
+import ContactImporter from "./ContactImporter";
 import ContactsTable from "./ContactsTable";
 
 interface Contact {

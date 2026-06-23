@@ -23,17 +23,20 @@ const callStatusColors: Record<string, string> = {
   RINGING: "bg-yellow-100 text-yellow-700",
 };
 
+// Next.js 15: params is a Promise
 export default async function CampaignDetailPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
+  const { id } = await params;
   const session = await auth();
   if (!session) redirect("/login");
 
   const campaign = await prisma.campaign.findFirst({
-    where: { id: params.id, userId: session.user!.id },
+    where: { id, userId: session.user!.id },
     include: {
+      contactGroup: { select: { name: true, _count: { select: { contacts: true } } } },
       calls: {
         include: { contact: { select: { name: true, phone: true } } },
         orderBy: { createdAt: "desc" },
@@ -54,19 +57,20 @@ export default async function CampaignDetailPage({
 
   return (
     <div className="space-y-6 max-w-4xl">
-      {/* Back link */}
-      <Link
-        href="/campaigns"
-        className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
-      >
+      <Link href="/campaigns" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
         <ArrowLeft size={15} /> Back to campaigns
       </Link>
 
-      {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold">{campaign.name}</h1>
           <p className="text-muted-foreground mt-1">{campaign.objective || "No objective set"}</p>
+          {campaign.contactGroup && (
+            <p className="text-sm text-muted-foreground mt-1">
+              Contact group: <span className="font-medium text-foreground">{campaign.contactGroup.name}</span>
+              {" "}({campaign.contactGroup._count.contacts} contacts)
+            </p>
+          )}
         </div>
         <div className="flex items-center gap-3 shrink-0">
           <span className={`text-xs px-3 py-1.5 rounded-full font-semibold ${statusColors[campaign.status]}`}>
@@ -78,7 +82,6 @@ export default async function CampaignDetailPage({
         </div>
       </div>
 
-      {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
           { label: "Total Calls", value: campaign._count.calls, icon: Phone },
@@ -91,18 +94,13 @@ export default async function CampaignDetailPage({
               <CardTitle className="text-xs text-muted-foreground font-medium">{label}</CardTitle>
               <Icon size={14} className="text-muted-foreground" />
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{value}</div>
-            </CardContent>
+            <CardContent><div className="text-2xl font-bold">{value}</div></CardContent>
           </Card>
         ))}
       </div>
 
-      {/* Configuration */}
       <Card>
-        <CardHeader>
-          <CardTitle className="text-base">AI Configuration</CardTitle>
-        </CardHeader>
+        <CardHeader><CardTitle className="text-base">AI Configuration</CardTitle></CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div>
@@ -126,22 +124,11 @@ export default async function CampaignDetailPage({
               <div className="bg-muted rounded-xl p-4 text-sm leading-relaxed whitespace-pre-wrap">{campaign.systemPrompt}</div>
             </div>
           )}
-          {campaign.knowledgeBase && (
-            <div>
-              <p className="text-xs text-muted-foreground mb-2 uppercase tracking-wide">Knowledge Base</p>
-              <div className="bg-muted rounded-xl p-4 text-sm leading-relaxed whitespace-pre-wrap line-clamp-3">{campaign.knowledgeBase}</div>
-            </div>
-          )}
         </CardContent>
       </Card>
 
-      {/* Calls */}
       <Card>
-        <CardHeader>
-          <CardTitle className="text-base">
-            Calls ({campaign._count.calls})
-          </CardTitle>
-        </CardHeader>
+        <CardHeader><CardTitle className="text-base">Calls ({campaign._count.calls})</CardTitle></CardHeader>
         <CardContent className="p-0">
           {campaign.calls.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-10 px-6">
