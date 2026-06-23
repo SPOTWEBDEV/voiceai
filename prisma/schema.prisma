@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "mysql"
+  provider = env("DB_PROVIDER")
   url      = env("DATABASE_URL")
 }
 
@@ -199,8 +199,42 @@ model Subscription {
   updatedAt  DateTime  @updatedAt
 }
 
-enum Role { USER ADMIN }
-enum ContactStatus { PENDING CALLED INTERESTED NOT_INTERESTED CALLBACK FAILED }
-enum CampaignStatus { DRAFT ACTIVE PAUSED COMPLETED FAILED }
-enum CallStatus { QUEUED RINGING IN_PROGRESS COMPLETED FAILED NO_ANSWER BUSY CANCELED }
-enum Plan { FREE STARTER GROWTH ENTERPRISE }
+enum Role {
+  USER
+  ADMIN
+}
+
+enum ContactStatus {
+  PENDING
+  CALLED
+  INTERESTED
+  NOT_INTERESTED
+  CALLBACK
+  FAILED
+}
+
+enum CampaignStatus {
+  DRAFT
+  ACTIVE
+  PAUSED
+  COMPLETED
+  FAILED
+}
+
+enum CallStatus {
+  QUEUED
+  RINGING
+  IN_PROGRESS
+  COMPLETED
+  FAILED
+  NO_ANSWER
+  BUSY
+  CANCELED
+}
+
+enum Plan {
+  FREE
+  STARTER
+  GROWTH
+  ENTERPRISE
+}
