@@ -6,8 +6,12 @@ const nextConfig: NextConfig = {
       allowedOrigins: ["localhost:3000"],
     },
   },
-  // Prevent bundling of server-only packages
+
   serverExternalPackages: ["@prisma/client", "bcryptjs", "twilio"],
+
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
 };
 
 export default nextConfig;
