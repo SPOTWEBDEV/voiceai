@@ -18,9 +18,28 @@ export default function LoginPage() {
     if (!email || !password) { setError("Please fill in all fields."); return; }
     setLoading(true);
     setError("");
+
     const result = await signIn("credentials", { email, password, redirect: false });
-    if (result?.error) { setError("Invalid email or password."); setLoading(false); }
-    else router.push("/dashboard");
+
+    if (result?.error) {
+      setError("Invalid email or password.");
+      setLoading(false);
+      return;
+    }
+
+    // Fetch session to check role
+    try {
+      const res = await fetch("/api/auth/session");
+      const session = await res.json();
+      if (session?.user?.role === "ADMIN") {
+        router.push("/admin");
+      } else {
+        router.push("/dashboard");
+      }
+      router.refresh();
+    } catch {
+      router.push("/dashboard");
+    }
   };
 
   const inputClass = "w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-violet-500/50 focus:bg-white/[0.07] transition-all";
@@ -47,6 +66,7 @@ export default function LoginPage() {
             onChange={(e) => setEmail(e.target.value)}
             placeholder="you@company.com"
             required
+            autoComplete="email"
             className={inputClass}
           />
         </div>
@@ -65,6 +85,7 @@ export default function LoginPage() {
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
               required
+              autoComplete="current-password"
               className={`${inputClass} pr-11`}
             />
             <button

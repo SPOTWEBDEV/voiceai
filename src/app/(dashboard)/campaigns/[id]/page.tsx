@@ -3,14 +3,15 @@ import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import StartCampaignButton from "@/components/campaigns/StartCampaignButton";
+import DeleteCampaignButton from "@/components/campaigns/DeleteCampaignButton";
 import Link from "next/link";
-import { ArrowLeft, Phone, Clock, TrendingUp } from "lucide-react";
+import { ArrowLeft, Phone, Clock, TrendingUp, Pencil, Users } from "lucide-react";
 
 const statusColors: Record<string, string> = {
   DRAFT: "bg-gray-100 text-gray-600",
   ACTIVE: "bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400",
   PAUSED: "bg-yellow-100 text-yellow-700",
-  COMPLETED: "bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400",
+  COMPLETED: "bg-blue-100 text-blue-700",
   FAILED: "bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-400",
 };
 
@@ -23,7 +24,6 @@ const callStatusColors: Record<string, string> = {
   RINGING: "bg-yellow-100 text-yellow-700",
 };
 
-// Next.js 15: params is a Promise
 export default async function CampaignDetailPage({
   params,
 }: {
@@ -36,7 +36,11 @@ export default async function CampaignDetailPage({
   const campaign = await prisma.campaign.findFirst({
     where: { id, userId: session.user!.id },
     include: {
-      contactGroup: { select: { name: true, _count: { select: { contacts: true } } } },
+      contactGroups: {
+        include: {
+          contactGroup: { select: { id: true, name: true, _count: { select: { contacts: true } } } },
+        },
+      },
       calls: {
         include: { contact: { select: { name: true, phone: true } } },
         orderBy: { createdAt: "desc" },
@@ -50,10 +54,13 @@ export default async function CampaignDetailPage({
 
   const completed = campaign.calls.filter((c) => c.status === "COMPLETED").length;
   const interested = campaign.calls.filter((c) => c.outcome === "interested").length;
-  const answerRate =
-    campaign._count.calls > 0
-      ? Math.round((completed / campaign._count.calls) * 100)
-      : 0;
+  const failed = campaign.calls.filter((c) => c.status === "FAILED").length;
+  const answerRate = campaign._count.calls > 0
+    ? Math.round((completed / campaign._count.calls) * 100)
+    : 0;
+  const totalContacts = campaign.contactGroups.reduce(
+    (sum, cg) => sum + cg.contactGroup._count.contacts, 0
+  );
 
   return (
     <div className="space-y-6 max-w-4xl">
@@ -61,27 +68,43 @@ export default async function CampaignDetailPage({
         <ArrowLeft size={15} /> Back to campaigns
       </Link>
 
+      {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold">{campaign.name}</h1>
           <p className="text-muted-foreground mt-1">{campaign.objective || "No objective set"}</p>
-          {campaign.contactGroup && (
-            <p className="text-sm text-muted-foreground mt-1">
-              Contact group: <span className="font-medium text-foreground">{campaign.contactGroup.name}</span>
-              {" "}({campaign.contactGroup._count.contacts} contacts)
-            </p>
-          )}
         </div>
-        <div className="flex items-center gap-3 shrink-0">
+        <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">
           <span className={`text-xs px-3 py-1.5 rounded-full font-semibold ${statusColors[campaign.status]}`}>
             {campaign.status}
           </span>
-          {(campaign.status === "DRAFT" || campaign.status === "PAUSED") && (
-            <StartCampaignButton campaignId={campaign.id} />
+          <Link href={`/campaigns/edit/${campaign.id}`}>
+            <button className="inline-flex items-center gap-1.5 text-sm border border-input hover:bg-accent px-3 py-1.5 rounded-lg font-medium transition-colors">
+              <Pencil size={13} />Edit
+            </button>
+          </Link>
+          <DeleteCampaignButton campaignId={campaign.id} campaignName={campaign.name} />
+          {campaign.contactGroups.length > 0 && (
+            <StartCampaignButton campaignId={campaign.id} status={campaign.status} />
           )}
         </div>
       </div>
 
+      {/* Contact groups */}
+      {campaign.contactGroups.length > 0 && (
+        <div className="flex flex-wrap gap-2 items-center">
+          <span className="text-sm text-muted-foreground flex items-center gap-1"><Users size={14} />Contact groups:</span>
+          {campaign.contactGroups.map((cg) => (
+            <span key={cg.contactGroup.id}
+              className="text-xs bg-primary/10 text-primary px-3 py-1 rounded-full font-medium">
+              {cg.contactGroup.name} ({cg.contactGroup._count.contacts})
+            </span>
+          ))}
+          <span className="text-xs text-muted-foreground">→ {totalContacts} total contacts</span>
+        </div>
+      )}
+
+      {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
           { label: "Total Calls", value: campaign._count.calls, icon: Phone },
@@ -99,6 +122,7 @@ export default async function CampaignDetailPage({
         ))}
       </div>
 
+      {/* AI config */}
       <Card>
         <CardHeader><CardTitle className="text-base">AI Configuration</CardTitle></CardHeader>
         <CardContent className="space-y-4">
@@ -127,8 +151,11 @@ export default async function CampaignDetailPage({
         </CardContent>
       </Card>
 
+      {/* Calls */}
       <Card>
-        <CardHeader><CardTitle className="text-base">Calls ({campaign._count.calls})</CardTitle></CardHeader>
+        <CardHeader>
+          <CardTitle className="text-base">Calls ({campaign._count.calls})</CardTitle>
+        </CardHeader>
         <CardContent className="p-0">
           {campaign.calls.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-10 px-6">
@@ -138,7 +165,7 @@ export default async function CampaignDetailPage({
             <table className="w-full text-sm">
               <thead className="bg-muted/50 border-b">
                 <tr>
-                  {["Contact", "Phone", "Status", "Outcome", "Date"].map((h) => (
+                  {["Contact", "Phone", "Status", "Outcome", "Error", "Date"].map((h) => (
                     <th key={h} className="text-left px-4 py-3 text-xs font-medium text-muted-foreground">{h}</th>
                   ))}
                 </tr>
@@ -155,6 +182,9 @@ export default async function CampaignDetailPage({
                     </td>
                     <td className="px-4 py-3 text-xs text-muted-foreground capitalize">
                       {call.outcome?.replace(/_/g, " ") || "—"}
+                    </td>
+                    <td className="px-4 py-3 text-xs text-red-500 max-w-[200px] truncate" title={(call as any).errorMessage || ""}>
+                      {(call as any).errorMessage || "—"}
                     </td>
                     <td className="px-4 py-3 text-xs text-muted-foreground">
                       {new Date(call.createdAt).toLocaleDateString()}

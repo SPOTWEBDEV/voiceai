@@ -8,23 +8,37 @@ export default async function DashboardPage() {
   const session = await auth();
   const userId = session!.user!.id;
 
-  const [contacts, campaigns, calls, completedCalls] = await Promise.all([
-    prisma.contact.count({ where: { userId } }),
+  const [contactGroups, campaigns, calls, completedCalls] = await Promise.all([
+    prisma.contactGroup.count({ where: { userId } }),
     prisma.campaign.count({ where: { userId } }),
     prisma.call.count({ where: { userId } }),
     prisma.call.count({ where: { userId, status: "COMPLETED" } }),
   ]);
 
+  // Count total contacts across all groups
+  const totalContacts = await prisma.contact.count({
+    where: { contactGroup: { userId } },
+  });
+
   const stats = [
-    { label: "Total Contacts", value: contacts, icon: Users, color: "text-blue-500" },
-    { label: "Campaigns", value: campaigns, icon: Megaphone, color: "text-purple-500" },
-    { label: "Calls Made", value: calls, icon: Phone, color: "text-green-500" },
-    { label: "Completion Rate", value: calls > 0 ? `${Math.round((completedCalls / calls) * 100)}%` : "0%", icon: TrendingUp, color: "text-orange-500" },
+    { label: "Contact Groups", value: contactGroups, icon: Users, color: "text-blue-500", sub: `${totalContacts} total contacts` },
+    { label: "Campaigns", value: campaigns, icon: Megaphone, color: "text-purple-500", sub: "all time" },
+    { label: "Calls Made", value: calls, icon: Phone, color: "text-green-500", sub: "all time" },
+    {
+      label: "Completion Rate",
+      value: calls > 0 ? `${Math.round((completedCalls / calls) * 100)}%` : "0%",
+      icon: TrendingUp,
+      color: "text-orange-500",
+      sub: `${completedCalls} completed`,
+    },
   ];
 
   const recentCalls = await prisma.call.findMany({
     where: { userId },
-    include: { contact: { select: { name: true } }, campaign: { select: { name: true } } },
+    include: {
+      contact: { select: { name: true } },
+      campaign: { select: { name: true } },
+    },
     orderBy: { createdAt: "desc" },
     take: 5,
   });
@@ -35,8 +49,9 @@ export default async function DashboardPage() {
         <h1 className="text-2xl font-bold">Dashboard</h1>
         <p className="text-muted-foreground">Welcome back, {session?.user?.name}</p>
       </div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {stats.map(({ label, value, icon: Icon, color }) => (
+        {stats.map(({ label, value, icon: Icon, color, sub }) => (
           <Card key={label}>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">{label}</CardTitle>
@@ -44,6 +59,7 @@ export default async function DashboardPage() {
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold">{value}</div>
+              <p className="text-xs text-muted-foreground mt-0.5">{sub}</p>
             </CardContent>
           </Card>
         ))}

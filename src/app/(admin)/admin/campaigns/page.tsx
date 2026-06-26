@@ -14,6 +14,9 @@ export default async function AdminCampaignsPage() {
     orderBy: { createdAt: "desc" },
     include: {
       user: { select: { email: true, name: true } },
+      contactGroups: {
+        include: { contactGroup: { select: { name: true, _count: { select: { contacts: true } } } } },
+      },
       _count: { select: { calls: true } },
     },
   });
@@ -30,7 +33,6 @@ export default async function AdminCampaignsPage() {
         <p className="text-muted-foreground">{campaigns.length} campaigns across all users</p>
       </div>
 
-      {/* Status summary */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
         {["DRAFT", "ACTIVE", "PAUSED", "COMPLETED", "FAILED"].map((s) => (
           <div key={s} className="border rounded-xl p-3 bg-card">
@@ -46,7 +48,7 @@ export default async function AdminCampaignsPage() {
           <table className="w-full text-sm">
             <thead className="bg-muted/50 border-b">
               <tr>
-                {["Campaign", "Owner", "Voice", "Status", "Calls", "Created"].map((h) => (
+                {["Campaign", "Owner", "Contact Groups", "Status", "Calls", "Created"].map((h) => (
                   <th key={h} className="text-left px-4 py-3 text-xs font-medium text-muted-foreground">{h}</th>
                 ))}
               </tr>
@@ -62,7 +64,11 @@ export default async function AdminCampaignsPage() {
                     <p>{c.user.name || "—"}</p>
                     <p className="truncate max-w-[140px]">{c.user.email}</p>
                   </td>
-                  <td className="px-4 py-3 text-xs text-muted-foreground capitalize">{c.voice}</td>
+                  <td className="px-4 py-3 text-xs text-muted-foreground">
+                    {c.contactGroups.length > 0
+                      ? c.contactGroups.map((cg) => `${cg.contactGroup.name} (${cg.contactGroup._count.contacts})`).join(", ")
+                      : "—"}
+                  </td>
                   <td className="px-4 py-3">
                     <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${statusColors[c.status]}`}>
                       {c.status}

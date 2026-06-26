@@ -1,7 +1,6 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 
 export default async function AnalyticsPage() {
   const session = await auth();
@@ -10,8 +9,8 @@ export default async function AnalyticsPage() {
   const [totalCalls, completedCalls, interestedContacts, callbackContacts, avgDurationResult] = await Promise.all([
     prisma.call.count({ where: { userId } }),
     prisma.call.count({ where: { userId, status: "COMPLETED" } }),
-    prisma.contact.count({ where: { userId, status: "INTERESTED" } }),
-    prisma.contact.count({ where: { userId, status: "CALLBACK" } }),
+    prisma.contact.count({ where: { contactGroup: { userId }, status: "INTERESTED" } }),
+    prisma.contact.count({ where: { contactGroup: { userId }, status: "CALLBACK" } }),
     prisma.call.aggregate({ where: { userId, status: "COMPLETED", duration: { not: null } }, _avg: { duration: true } }),
   ]);
 
@@ -51,7 +50,9 @@ export default async function AnalyticsPage() {
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
         {stats.map(({ label, value, sub }) => (
           <Card key={label}>
-            <CardHeader className="pb-1"><CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{label}</CardTitle></CardHeader>
+            <CardHeader className="pb-1">
+              <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{label}</CardTitle>
+            </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{value}</div>
               <p className="text-xs text-muted-foreground mt-0.5">{sub}</p>
@@ -70,7 +71,7 @@ export default async function AnalyticsPage() {
               <div className="space-y-3">
                 {outcomes.map((o) => (
                   <div key={o.outcome} className="flex items-center justify-between">
-                    <Badge variant="outline" className="capitalize">{o.outcome?.replace(/_/g, " ")}</Badge>
+                    <span className="text-sm capitalize border rounded-full px-2.5 py-0.5">{o.outcome?.replace(/_/g, " ")}</span>
                     <span className="text-sm font-medium">{o._count}</span>
                   </div>
                 ))}

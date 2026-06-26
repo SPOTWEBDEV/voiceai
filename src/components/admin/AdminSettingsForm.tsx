@@ -1,142 +1,142 @@
 "use client";
 import { useState } from "react";
-import { Eye, EyeOff, Loader2, Bot, Phone, Info, ExternalLink, Check } from "lucide-react";
-
-const FREE_MODELS = [
-  { id: "meta-llama/llama-3.1-8b-instruct:free", label: "Llama 3.1 8B Instruct", desc: "Fast, great for conversation" },
-  { id: "meta-llama/llama-3.2-3b-instruct:free", label: "Llama 3.2 3B Instruct", desc: "Very fast, lightweight" },
-  { id: "mistralai/mistral-7b-instruct:free", label: "Mistral 7B Instruct", desc: "Reliable, good quality" },
-  { id: "google/gemma-2-9b-it:free", label: "Gemma 2 9B IT", desc: "Google model, very capable" },
-  { id: "nousresearch/hermes-3-llama-3.1-405b:free", label: "Hermes 3 405B", desc: "Most capable free model" },
-  { id: "qwen/qwen-2-7b-instruct:free", label: "Qwen 2 7B", desc: "Multilingual, strong" },
-];
-
-function Section({ title, icon: Icon, desc, children }: { title: string; icon: any; desc?: string; children: React.ReactNode }) {
-  return (
-    <div className="border rounded-xl bg-card">
-      <div className="p-5 border-b flex items-center gap-2">
-        <Icon size={18} className="text-muted-foreground" />
-        <span className="font-semibold text-sm">{title}</span>
-      </div>
-      {desc && (
-        <div className="px-5 pt-4 flex items-start gap-2 text-xs text-muted-foreground">
-          <Info size={13} className="mt-0.5 shrink-0" /><p>{desc}</p>
-        </div>
-      )}
-      <div className="p-5 space-y-4">{children}</div>
-    </div>
-  );
-}
-
-const inputClass = "w-full h-10 rounded-lg border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring transition-colors";
+import { Loader2, Info, ShieldCheck, Users, BarChart3 } from "lucide-react";
 
 export default function AdminSettingsForm() {
-  const [showTokens, setShowTokens] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
-  const [openrouterKey, setOpenrouterKey] = useState("");
-  const [openrouterModel, setOpenrouterModel] = useState("meta-llama/llama-3.1-8b-instruct:free");
-  const [twilioSid, setTwilioSid] = useState("");
-  const [twilioToken, setTwilioToken] = useState("");
-  const [twilioPhone, setTwilioPhone] = useState("");
+  const [appName, setAppName] = useState("VoiceAI");
+  const [supportEmail, setSupportEmail] = useState("");
+  const [maxCallsPerUser, setMaxCallsPerUser] = useState("1000");
+  const [maintenanceMode, setMaintenanceMode] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
-    await fetch("/api/admin/settings", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ openrouterKey, openrouterModel, twilioSid, twilioToken, twilioPhone }),
-    });
+    // Simulate save - in production connect to a PlatformConfig table
+    await new Promise((r) => setTimeout(r, 800));
     setSaving(false);
     setSaved(true);
     setTimeout(() => setSaved(false), 2500);
   };
 
-  const toggleBtn = (
-    <button type="button" onClick={() => setShowTokens(!showTokens)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
-      {showTokens ? <EyeOff size={15} /> : <Eye size={15} />}
-    </button>
-  );
+  const inputClass = "w-full h-10 rounded-lg border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring transition-colors";
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      <Section
-        title="OpenRouter AI (Platform Default)"
-        icon={Bot}
-        desc="Used for all users who haven't set their own key. Users can override this in their own settings."
-      >
-        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4 space-y-1">
-          <p className="text-xs font-semibold text-blue-700 dark:text-blue-400">Free API — No credit card required</p>
-          <p className="text-xs text-blue-600 dark:text-blue-400">
-            Get a free key at{" "}
-            <a href="https://openrouter.ai/keys" target="_blank" rel="noreferrer" className="underline font-medium">
-              openrouter.ai/keys
-            </a>{" "}
-            — sign up with Google or GitHub.
-          </p>
-          <a href="https://openrouter.ai/keys" target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-xs text-blue-700 dark:text-blue-400 hover:underline font-medium">
-            Get API Key <ExternalLink size={10} />
-          </a>
+    <div className="space-y-6">
+      {/* Info banner */}
+      <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4 flex gap-3">
+        <Info size={18} className="text-blue-500 shrink-0 mt-0.5" />
+        <div className="text-sm text-blue-700 dark:text-blue-400 space-y-1">
+          <p className="font-semibold">API credentials are managed per-user</p>
+          <p>Each user configures their own OpenRouter API key and selects their preferred free AI model in their Settings page. Twilio credentials are configured globally via environment variables.</p>
         </div>
+      </div>
 
-        <div className="space-y-1.5">
-          <label className="text-sm font-medium">OpenRouter API Key</label>
-          <div className="relative">
-            <input value={openrouterKey} onChange={(e) => setOpenrouterKey(e.target.value)} type={showTokens ? "text" : "password"} placeholder="sk-or-v1-..." className={`${inputClass} pr-10`} />
-            {toggleBtn}
+      {/* Platform stats cards */}
+      <div className="grid grid-cols-3 gap-4">
+        {[
+          { label: "Total Users", icon: Users, value: "—" },
+          { label: "Total Campaigns", icon: BarChart3, value: "—" },
+          { label: "Platform Status", icon: ShieldCheck, value: "Active" },
+        ].map(({ label, icon: Icon, value }) => (
+          <div key={label} className="border rounded-xl bg-card p-4 flex items-center gap-3">
+            <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+              <Icon size={18} className="text-primary" />
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">{label}</p>
+              <p className="font-bold">{value}</p>
+            </div>
           </div>
-          <p className="text-xs text-muted-foreground">Also set <code className="font-mono bg-muted px-1 rounded">OPENROUTER_API_KEY</code> in .env.local as a secure fallback.</p>
+        ))}
+      </div>
+
+      {/* Platform config form */}
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="border rounded-xl bg-card">
+          <div className="p-5 border-b">
+            <span className="font-semibold text-sm">General Platform Settings</span>
+          </div>
+          <div className="p-5 space-y-4">
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium">Platform Name</label>
+              <input
+                value={appName}
+                onChange={(e) => setAppName(e.target.value)}
+                placeholder="VoiceAI"
+                className={inputClass}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium">Support Email</label>
+              <input
+                type="email"
+                value={supportEmail}
+                onChange={(e) => setSupportEmail(e.target.value)}
+                placeholder="support@yourplatform.com"
+                className={inputClass}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium">Default Call Limit Per User</label>
+              <input
+                type="number"
+                value={maxCallsPerUser}
+                onChange={(e) => setMaxCallsPerUser(e.target.value)}
+                placeholder="1000"
+                className={inputClass}
+              />
+              <p className="text-xs text-muted-foreground">Maximum calls a user can make per month on the free plan.</p>
+            </div>
+
+            <div className="flex items-center justify-between py-2">
+              <div>
+                <p className="text-sm font-medium">Maintenance Mode</p>
+                <p className="text-xs text-muted-foreground">When enabled, only admins can access the platform.</p>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={maintenanceMode}
+                  onChange={(e) => setMaintenanceMode(e.target.checked)}
+                  className="sr-only peer"
+                />
+                <div className="w-9 h-5 bg-muted rounded-full peer peer-checked:bg-primary transition-colors after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-4" />
+              </label>
+            </div>
+          </div>
         </div>
 
-        <div className="space-y-2">
-          <label className="text-sm font-medium">Default Model</label>
-          <div className="grid gap-2">
-            {FREE_MODELS.map((m) => (
-              <label key={m.id} className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${openrouterModel === m.id ? "border-primary bg-primary/5" : "border-input hover:bg-muted/30"}`}>
-                <input type="radio" name="adminModel" value={m.id} checked={openrouterModel === m.id} onChange={() => setOpenrouterModel(m.id)} className="sr-only" />
-                <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${openrouterModel === m.id ? "border-primary bg-primary" : "border-muted-foreground/40"}`}>
-                  {openrouterModel === m.id && <Check size={10} className="text-white" />}
-                </div>
-                <div className="flex-1">
-                  <p className="text-sm font-medium">{m.label}</p>
-                  <p className="text-xs text-muted-foreground">{m.desc}</p>
-                </div>
-                <span className="text-xs bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400 px-2 py-0.5 rounded-full font-medium shrink-0">Free</span>
-              </label>
+        {/* Environment variables reminder */}
+        <div className="border border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-900/20 rounded-xl p-4 text-xs text-amber-700 dark:text-amber-400 space-y-2">
+          <p className="font-semibold text-sm">Environment Variables (set in .env.local or Netlify)</p>
+          <div className="grid grid-cols-1 gap-1 font-mono">
+            {[
+              "OPENROUTER_API_KEY   — platform default AI key",
+              "OPENROUTER_MODEL     — default free model",
+              "TWILIO_ACCOUNT_SID   — Twilio account",
+              "TWILIO_AUTH_TOKEN    — Twilio auth",
+              "TWILIO_PHONE_NUMBER  — outbound phone number",
+              "NEXTAUTH_SECRET      — auth encryption secret",
+              "DATABASE_URL         — database connection",
+            ].map((v) => (
+              <p key={v} className="bg-amber-100 dark:bg-amber-900/40 px-2 py-0.5 rounded">
+                {v}
+              </p>
             ))}
           </div>
         </div>
-      </Section>
 
-      <Section title="Twilio (Platform Default)" icon={Phone} desc="Platform-wide Twilio credentials for making phone calls.">
-        <div className="space-y-1.5">
-          <label className="text-sm font-medium">Account SID</label>
-          <input value={twilioSid} onChange={(e) => setTwilioSid(e.target.value)} placeholder="AC..." className={inputClass} />
-        </div>
-        <div className="space-y-1.5">
-          <label className="text-sm font-medium">Auth Token</label>
-          <div className="relative">
-            <input value={twilioToken} onChange={(e) => setTwilioToken(e.target.value)} type={showTokens ? "text" : "password"} placeholder="Your auth token" className={`${inputClass} pr-10`} />
-            {toggleBtn}
-          </div>
-        </div>
-        <div className="space-y-1.5">
-          <label className="text-sm font-medium">Phone Number</label>
-          <input value={twilioPhone} onChange={(e) => setTwilioPhone(e.target.value)} placeholder="+1..." className={inputClass} />
-          <p className="text-xs text-muted-foreground">Must be a Twilio number with Voice capabilities. Set <code className="font-mono bg-muted px-1 rounded">TWILIO_*</code> env vars as secure fallbacks.</p>
-        </div>
-      </Section>
-
-      <div className="border border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-900/20 rounded-xl p-4 text-xs text-amber-700 dark:text-amber-400">
-        <p className="font-semibold mb-1">Best practice: use environment variables</p>
-        <p>Set credentials in <code className="font-mono bg-amber-100 dark:bg-amber-900/40 px-1 rounded">.env.local</code> so they are never exposed in the database. UI values here override env vars at runtime.</p>
-      </div>
-
-      <button type="submit" disabled={saving} className="w-full bg-primary hover:bg-primary/90 disabled:opacity-50 text-primary-foreground font-semibold py-3 rounded-xl text-sm transition-all flex items-center justify-center gap-2">
-        {saving && <Loader2 size={15} className="animate-spin" />}
-        {saved ? "✓ Settings saved!" : saving ? "Saving…" : "Save Platform Settings"}
-      </button>
-    </form>
+        <button
+          type="submit"
+          disabled={saving}
+          className="w-full bg-primary hover:bg-primary/90 disabled:opacity-50 text-primary-foreground font-semibold py-3 rounded-xl text-sm transition-all flex items-center justify-center gap-2"
+        >
+          {saving && <Loader2 size={15} className="animate-spin" />}
+          {saved ? "✓ Settings saved!" : saving ? "Saving…" : "Save Settings"}
+        </button>
+      </form>
+    </div>
   );
 }

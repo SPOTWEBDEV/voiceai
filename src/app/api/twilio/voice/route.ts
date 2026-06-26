@@ -11,11 +11,19 @@ export async function POST(req: NextRequest) {
   const callSid = formData.get("CallSid") as string;
 
   const call = callId
-    ? await prisma.call.findUnique({ where: { id: callId }, include: { campaign: true, contact: true } })
-    : await prisma.call.findFirst({ where: { twilioSid: callSid }, include: { campaign: true, contact: true } });
+    ? await prisma.call.findUnique({
+        where: { id: callId },
+        include: { campaign: true, contact: true },
+      })
+    : await prisma.call.findFirst({
+        where: { twilioSid: callSid },
+        include: { campaign: true, contact: true },
+      });
 
   const response = new VoiceResponse();
-  const greeting = call?.campaign?.script || `Hi, this is an AI assistant calling from ${call?.campaign?.name || "our company"}. How are you today?`;
+  const greeting =
+    call?.campaign?.script ||
+    `Hi, this is an AI assistant calling from ${call?.campaign?.name || "our company"}. How are you today?`;
 
   const gather = response.gather({
     input: ["speech"] as any,
@@ -27,9 +35,12 @@ export async function POST(req: NextRequest) {
   gather.say({ voice: "Polly.Joanna" as any }, greeting);
 
   if (call?.id) {
-    await prisma.callTranscript.create({ data: { callId: call.id, role: "ai", content: greeting } });
-    if (callSid && !call.twilioSid) {
-      await prisma.call.update({ where: { id: call.id }, data: { twilioSid: callSid } });
+    await prisma.callTranscript.create({
+      data: { callId: call.id, role: "ai", content: greeting },
+    });
+    // Update twilioSid if not already set
+    if (callSid && call && !call.twilioSid) {
+      await prisma.call.update({ where: { id: call.id }, data: { twilioSid: callSid, status: "IN_PROGRESS" } });
     }
   }
 

@@ -3,35 +3,34 @@ generator client {
 }
 
 datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
+  provider = "mysql"
+  url      = env("DATABASE_URL")
 }
 
 model User {
-  id            String    @id @default(cuid())
-  name          String?
-  email         String    @unique
-  emailVerified DateTime?
-  password      String?
-  image         String?
-  role          Role      @default(USER)
-  twilioSid     String?
-  twilioToken   String?
-  twilioPhone   String?
+  id              String    @id @default(cuid())
+  name            String?
+  email           String    @unique
+  emailVerified   DateTime?
+  password        String?
+  image           String?
+  role            Role      @default(USER)
+  twilioSid       String?
+  twilioToken     String?
+  twilioPhone     String?
   openrouterKey   String?
   openrouterModel String?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 
-  accounts       Account[]
-  sessions       Session[]
-  contactGroups  ContactGroup[]
-  campaigns      Campaign[]
-  calls          Call[]
-  notifications  Notification[]
-  apiKeys        APIKey[]
-  auditLogs      AuditLog[]
+  accounts      Account[]
+  sessions      Session[]
+  contactGroups ContactGroup[]
+  campaigns     Campaign[]
+  calls         Call[]
+  notifications Notification[]
+  apiKeys       APIKey[]
+  auditLogs     AuditLog[]
 }
 
 model Account {
@@ -68,18 +67,17 @@ model VerificationToken {
   @@unique([identifier, token])
 }
 
-// ─── Contact Group (replaces bare Contact list) ───────────────────────────────
 model ContactGroup {
   id          String   @id @default(cuid())
   userId      String
-  name        String                      // e.g. "Lagos Real Estate Leads"
+  name        String
   description String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User               @relation(fields: [userId], references: [id], onDelete: Cascade)
   contacts  Contact[]
-  campaigns Campaign[]
+  campaigns CampaignContactGroup[]
 }
 
 model Contact {
@@ -100,23 +98,33 @@ model Contact {
 }
 
 model Campaign {
-  id             String         @id @default(cuid())
-  userId         String
-  contactGroupId String?                   // selected contact group
-  name           String
-  objective      String?
-  script         String?
-  systemPrompt   String?
-  knowledgeBase  String?
-  voice          String         @default("alloy")
-  status         CampaignStatus @default(DRAFT)
-  scheduledAt    DateTime?
-  createdAt      DateTime       @default(now())
-  updatedAt      DateTime       @updatedAt
+  id            String         @id @default(cuid())
+  userId        String
+  name          String
+  objective     String?
+  script        String?
+  systemPrompt  String?
+  knowledgeBase String?
+  voice         String         @default("alloy")
+  status        CampaignStatus @default(DRAFT)
+  scheduledAt   DateTime?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
 
-  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  contactGroup ContactGroup? @relation(fields: [contactGroupId], references: [id])
-  calls        Call[]
+  user          User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  contactGroups CampaignContactGroup[]
+  calls         Call[]
+}
+
+// Many-to-many: Campaign <-> ContactGroup
+model CampaignContactGroup {
+  campaignId     String
+  contactGroupId String
+
+  campaign     Campaign     @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  contactGroup ContactGroup @relation(fields: [contactGroupId], references: [id], onDelete: Cascade)
+
+  @@id([campaignId, contactGroupId])
 }
 
 model Call {
@@ -132,6 +140,7 @@ model Call {
   summary      String?
   followUp     String?
   recordingUrl String?
+  errorMessage String?
   startedAt    DateTime?
   endedAt      DateTime?
   createdAt    DateTime   @default(now())

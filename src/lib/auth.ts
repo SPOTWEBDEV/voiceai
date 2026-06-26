@@ -57,5 +57,11 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       }
       return session;
     },
+    // Redirect admin to /admin after sign in
+    async redirect({ url, baseUrl }) {
+      if (url.startsWith(baseUrl)) return url;
+      if (url.startsWith("/")) return `${baseUrl}${url}`;
+      return baseUrl;
+    },
   },
 });

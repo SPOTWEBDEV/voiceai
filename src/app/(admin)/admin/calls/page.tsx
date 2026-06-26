@@ -5,7 +5,7 @@ const statusColors: Record<string, string> = {
   COMPLETED: "bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400",
   FAILED: "bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-400",
   NO_ANSWER: "bg-muted text-muted-foreground",
-  IN_PROGRESS: "bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400",
+  IN_PROGRESS: "bg-blue-100 text-blue-700",
   QUEUED: "bg-muted text-muted-foreground",
   RINGING: "bg-yellow-100 text-yellow-700",
   BUSY: "bg-muted text-muted-foreground",

@@ -15,16 +15,11 @@ export async function middleware(req: NextRequest) {
   const isAdminRoute = pathname.startsWith("/admin");
   const isAuthRoute = pathname === "/login" || pathname === "/register";
 
-  // Get JWT token directly — avoids importing bcryptjs into edge runtime
-  const token = await getToken({
-    req,
-    secret: process.env.NEXTAUTH_SECRET,
-  });
-
+  const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
   const isLoggedIn = !!token;
   const role = token?.role as string | undefined;
 
-  // Unauthenticated → redirect to login
+  // Not logged in → send to login
   if ((isDashboardRoute || isAdminRoute) && !isLoggedIn) {
     return NextResponse.redirect(new URL("/login", req.nextUrl));
   }
@@ -34,9 +29,16 @@ export async function middleware(req: NextRequest) {
     return NextResponse.redirect(new URL("/dashboard", req.nextUrl));
   }
 
-  // Already logged in → redirect away from auth pages
+  // Logged-in admin trying to access /dashboard → send to /admin
+  if (pathname === "/dashboard" && isLoggedIn && role === "ADMIN") {
+    return NextResponse.redirect(new URL("/admin", req.nextUrl));
+  }
+
+  // Already logged in → away from auth pages
   if (isAuthRoute && isLoggedIn) {
-    return NextResponse.redirect(new URL("/dashboard", req.nextUrl));
+    // Redirect based on role
+    const dest = role === "ADMIN" ? "/admin" : "/dashboard";
+    return NextResponse.redirect(new URL(dest, req.nextUrl));
   }
 
   return NextResponse.next();
