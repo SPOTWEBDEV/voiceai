@@ -1,29 +1,39 @@
 export type {
   User,
   Contact,
+  ContactGroup,
   Campaign,
+  CampaignContactGroup,
   Call,
   CallTranscript,
+  Message,
   CallStatus,
   CampaignStatus,
   ContactStatus,
+  MessageStatus,
+  ChannelType,
   Role,
+  Plan,
 } from "@prisma/client";
 
 export interface UploadResult {
   imported: number;
+  total: number;
 }
 
 export interface StartCampaignResult {
   started: number;
-  calls: { contactId: string; callId: string; sid: string }[];
+  failed: number;
+  total: number;
+  message: string;
+  results: { contactId: string; callId?: string; sid?: string; error?: string }[];
 }
 
 export interface ApiError {
   error: string;
 }
 
-// ─── NextAuth type augmentation ───────────────────────────────────────────────
+// NextAuth type augmentation
 declare module "next-auth" {
   interface User {
     id: string;
