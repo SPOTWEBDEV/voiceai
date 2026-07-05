@@ -1,7 +1,7 @@
 import Navbar from "@/components/landing/Navbar";
 import Hero from "@/components/landing/Hero";
 import TrustedBy from "@/components/landing/TrustedBy";
-import Problem from "@/components/landing/Problem";
+import Channels from "@/components/landing/Channels";
 import HowItWorks from "@/components/landing/HowItWorks";
 import Features from "@/components/landing/Features";
 import UseCases from "@/components/landing/UseCases";
@@ -13,11 +13,11 @@ import Footer from "@/components/landing/Footer";
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-[#08090a] text-white">
+    <div className="min-h-screen bg-[#07080a] text-white">
       <Navbar />
       <Hero />
       <TrustedBy />
-      <Problem />
+      <Channels />
       <HowItWorks />
       <Features />
       <UseCases />

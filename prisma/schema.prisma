@@ -18,6 +18,11 @@ model User {
   twilioSid       String?
   twilioToken     String?
   twilioPhone     String?
+  smtpHost        String?
+  smtpPort        Int?
+  smtpUser        String?
+  smtpPass        String?
+  smtpFrom        String?
   openrouterKey   String?
   openrouterModel String?
   createdAt       DateTime  @default(now())
@@ -28,6 +33,7 @@ model User {
   contactGroups ContactGroup[]
   campaigns     Campaign[]
   calls         Call[]
+  messages      Message[]
   notifications Notification[]
   apiKeys       APIKey[]
   auditLogs     AuditLog[]
@@ -75,7 +81,7 @@ model ContactGroup {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  user      User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
   contacts  Contact[]
   campaigns CampaignContactGroup[]
 }
@@ -95,28 +101,38 @@ model Contact {
 
   contactGroup ContactGroup @relation(fields: [contactGroupId], references: [id], onDelete: Cascade)
   calls        Call[]
+  messages     Message[]
 }
 
 model Campaign {
-  id            String         @id @default(cuid())
+  id            String       @id @default(cuid())
   userId        String
   name          String
   objective     String?
+  channelType   ChannelType  @default(CALL)
+  // CALL fields
   script        String?
   systemPrompt  String?
   knowledgeBase String?
-  voice         String         @default("alloy")
+  voice         String       @default("alloy")
+  // SMS fields
+  smsBody       String?
+  // EMAIL fields
+  emailSubject  String?
+  emailBodyHtml String?
+  emailBodyText String?
+  // Shared
   status        CampaignStatus @default(DRAFT)
   scheduledAt   DateTime?
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
 
   user          User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
   contactGroups CampaignContactGroup[]
   calls         Call[]
+  messages      Message[]
 }
 
-// Many-to-many: Campaign <-> ContactGroup
 model CampaignContactGroup {
   campaignId     String
   contactGroupId String
@@ -160,6 +176,24 @@ model CallTranscript {
   timestamp DateTime @default(now())
 
   call Call @relation(fields: [callId], references: [id], onDelete: Cascade)
+}
+
+model Message {
+  id           String        @id @default(cuid())
+  userId       String
+  contactId    String
+  campaignId   String
+  type         ChannelType
+  status       MessageStatus @default(PENDING)
+  to           String
+  errorMessage String?
+  sentAt       DateTime?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  contact  Contact  @relation(fields: [contactId], references: [id])
+  campaign Campaign @relation(fields: [campaignId], references: [id])
 }
 
 model Notification {
@@ -214,13 +248,28 @@ enum Role {
   ADMIN
 }
 
+enum ChannelType {
+  CALL
+  SMS
+  EMAIL
+}
+
 enum ContactStatus {
   PENDING
   CALLED
+  MESSAGED
+  EMAILED
   INTERESTED
   NOT_INTERESTED
   CALLBACK
   FAILED
+}
+
+enum MessageStatus {
+  PENDING
+  SENT
+  FAILED
+  DELIVERED
 }
 
 enum CampaignStatus {
