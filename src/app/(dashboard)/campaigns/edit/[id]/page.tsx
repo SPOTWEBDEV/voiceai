@@ -25,6 +25,22 @@ export default async function EditCampaignPage({
 
   if (!campaign) redirect("/campaigns");
 
+  // Pass all fields including SMS/Email fields
+  const campaignData = {
+    id: campaign.id,
+    name: campaign.name,
+    objective: campaign.objective,
+    channelType: campaign.channelType as "CALL" | "SMS" | "EMAIL",
+    script: campaign.script,
+    systemPrompt: campaign.systemPrompt,
+    knowledgeBase: campaign.knowledgeBase,
+    voice: campaign.voice,
+    smsBody: campaign.smsBody,
+    emailSubject: campaign.emailSubject,
+    emailBodyHtml: campaign.emailBodyHtml,
+    contactGroups: campaign.contactGroups,
+  };
+
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       <Link
@@ -37,7 +53,7 @@ export default async function EditCampaignPage({
         <h1 className="text-2xl font-bold">Edit Campaign</h1>
         <p className="text-muted-foreground">Update your campaign settings</p>
       </div>
-      <CreateCampaignForm campaign={campaign as any} />
+      <CreateCampaignForm campaign={campaignData} />
     </div>
   );
 }

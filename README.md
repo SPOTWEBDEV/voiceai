@@ -1,158 +1,121 @@
-# VoiceAI — AI Voice Outreach Platform
+# VoiceAI — AI Outreach Platform
 
-A full-stack SaaS app that lets you upload contacts, create AI voice campaigns, and have GPT-4o call your contacts via Twilio — with live transcripts, AI summaries, and analytics.
+A full-stack SaaS app for Voice Call, SMS, and Email campaigns with AI-powered conversations, real-time transcripts, and analytics.
 
 ---
 
-## Tech Stack
+## Channels Supported
 
-| Layer | Tech |
-|---|---|
-| Framework | Next.js 15 App Router |
-| Language | TypeScript |
-| Styling | Tailwind CSS |
-| Database | Prisma ORM (PostgreSQL / MySQL / SQLite) |
-| Auth | NextAuth v5 (JWT) |
-| Telephony | Twilio Voice |
-| AI | OpenAI GPT-4o + Whisper |
+| Channel | Powered By | Free? |
+|---|---|---|
+| Voice Call | Twilio + OpenRouter AI | OpenRouter free; Twilio has trial credit |
+| SMS | Twilio | Twilio trial credit (~$15) |
+| Email | SMTP (Gmail, Outlook, etc.) | Free with Gmail |
 
 ---
 
 ## Quick Start
 
-### 1. Install dependencies
 ```bash
+# 1. Install
 npm install
-```
 
-### 2. Configure environment
-```bash
+# 2. Configure
 cp .env.example .env.local
-# Fill in all values — minimum required: DATABASE_URL, DB_PROVIDER, NEXTAUTH_SECRET
-```
+# Fill in .env.local (see below)
 
-### 3. Set up database
-```bash
-npx prisma generate
+# 3. Database
 npx prisma db push
-```
 
-### 4. Start development server
-```bash
+# 4. Run
 npm run dev
 ```
 
-→ Open [http://localhost:3000](http://localhost:3000)
+Open http://localhost:3000
 
 ---
 
-## Environment Variables
+## Required Environment Variables
 
-| Variable | Required | Description |
-|---|---|---|
-| `DB_PROVIDER` | ✅ | `postgresql`, `mysql`, or `sqlite` |
-| `DATABASE_URL` | ✅ | Database connection string |
-| `NEXTAUTH_SECRET` | ✅ | Random secret (`openssl rand -base64 32`) |
-| `NEXTAUTH_URL` | ✅ | App URL e.g. `http://localhost:3000` |
-| `OPENAI_API_KEY` | ✅ | OpenAI API key (GPT-4o + Whisper) |
-| `TWILIO_ACCOUNT_SID` | ✅ | Twilio Account SID |
-| `TWILIO_AUTH_TOKEN` | ✅ | Twilio Auth Token |
-| `TWILIO_PHONE_NUMBER` | ✅ | Twilio phone number e.g. `+12025551234` |
-| `NEXT_PUBLIC_APP_URL` | ✅ | Public URL for Twilio webhooks |
+### Minimum (to run the app)
+```env
+DB_PROVIDER="sqlite"
+DATABASE_URL="file:./dev.db"
+NEXTAUTH_SECRET="run: openssl rand -base64 32"
+NEXTAUTH_URL="http://localhost:3000"
+NEXT_PUBLIC_APP_URL="http://localhost:3000"
+```
+
+### For Voice Calls
+```env
+TWILIO_ACCOUNT_SID="AC..."
+TWILIO_AUTH_TOKEN="..."
+TWILIO_PHONE_NUMBER="+1..."
+OPENROUTER_API_KEY="sk-or-v1-..."
+OPENROUTER_MODEL="meta-llama/llama-3.1-8b-instruct:free"
+```
+> For local Twilio webhooks, use ngrok: https://ngrok.com  
+> Set NEXT_PUBLIC_APP_URL to your ngrok URL
+
+### For SMS
+Same Twilio credentials as above.
+
+### For Email
+```env
+SMTP_HOST="smtp.gmail.com"
+SMTP_PORT="587"
+SMTP_USER="you@gmail.com"
+SMTP_PASS="your-app-password"
+EMAIL_FROM="Your Name <you@gmail.com>"
+```
+> Gmail App Password: https://myaccount.google.com/apppasswords
 
 ---
 
-## Making Yourself an Admin
+## Making Yourself Admin
 
-After registering, run this in your terminal:
-
+After registering, run in terminal:
 ```bash
 npx prisma studio
-# Open User table → find your user → change role from USER to ADMIN
-```
-
-Or with a direct SQL query:
-```sql
-UPDATE "User" SET role = 'ADMIN' WHERE email = 'your@email.com';
+# Users table → set your role to ADMIN → Save
 ```
 
 ---
 
-## Local Twilio Webhooks (ngrok)
+## Campaign Types
 
-Twilio needs a public URL to send call events to your local server:
+### Voice Call
+- AI calls each contact using Twilio
+- GPT-quality conversation via OpenRouter (free models)
+- Full transcript + AI summary generated after each call
 
+### SMS
+- Sends personalized SMS to each contact
+- Supports {{name}}, {{email}}, {{company}}, {{phone}} variables
+- Requires contacts to have phone numbers
+
+### Email
+- Sends HTML emails via your SMTP server
+- Supports template variables
+- Requires contacts to have email addresses
+
+---
+
+## Netlify Deployment
+
+Set these environment variables in Netlify dashboard:
+```
+DB_PROVIDER, DATABASE_URL, NEXTAUTH_SECRET, NEXTAUTH_URL,
+NEXT_PUBLIC_APP_URL, OPENROUTER_API_KEY, OPENROUTER_MODEL,
+TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_PHONE_NUMBER,
+SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, EMAIL_FROM
+```
+
+---
+
+## After Schema Changes
+
+If you pull a new version, always run:
 ```bash
-# Install ngrok: https://ngrok.com
-ngrok http 3000
-
-# Copy the https URL, e.g. https://abc123.ngrok.io
-# Set in .env.local:
-NEXT_PUBLIC_APP_URL=https://abc123.ngrok.io
-```
-
----
-
-## CSV Import Format
-
-Only `phone` is required. Supported column names are case-insensitive:
-
-```csv
-name,phone,email,company,notes
-John Smith,+12025551234,john@co.com,Acme Inc,Met at conference
-Jane Doe,+12025559876,jane@co.com,,
-```
-
----
-
-## Routes
-
-### User Dashboard
-| Route | Description |
-|---|---|
-| `/dashboard` | Overview stats + recent calls |
-| `/contacts` | Upload & manage contacts |
-| `/campaigns` | Create & launch campaigns |
-| `/campaigns/new` | New campaign form |
-| `/campaigns/[id]` | Campaign detail & call list |
-| `/calls` | All calls with transcripts |
-| `/analytics` | Call outcomes & summaries |
-| `/settings` | Profile settings |
-
-### Admin Panel (`/admin`)
-| Route | Description |
-|---|---|
-| `/admin` | Platform-wide stats |
-| `/admin/users` | All users + role management |
-| `/admin/campaigns` | All campaigns |
-| `/admin/calls` | All calls across users |
-| `/admin/settings` | Platform API credentials |
-
----
-
-## Project Structure
-
-```
-src/
-├── app/
-│   ├── (auth)/          # Login, Register, Forgot/Reset password
-│   ├── (dashboard)/     # User dashboard routes
-│   ├── (admin)/         # Admin panel routes
-│   └── api/             # All API endpoints
-├── components/
-│   ├── landing/         # Public landing page sections
-│   ├── layout/          # Sidebar, header
-│   ├── admin/           # Admin-specific components
-│   ├── campaigns/       # Campaign form + buttons
-│   ├── calls/           # Calls table + transcript modal
-│   ├── contacts/        # Upload + table
-│   ├── settings/        # Settings form
-│   └── ui/              # Base UI components
-├── lib/
-│   ├── auth.ts          # NextAuth config
-│   ├── prisma.ts        # Prisma singleton
-│   ├── twilio.ts        # Twilio helpers
-│   └── openai.ts        # OpenAI helpers
-└── prisma/
-    └── schema.prisma    # All DB models
+npx prisma db push
 ```
